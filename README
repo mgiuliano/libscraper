@@ -1,0 +1,40 @@
+# Scraper Library
+# Version 2
+#
+# Copyright 2008-2013 Beatscope Limited
+# GNU GPL v3 Licence
+
+Package Tree:
+------------
+
+bin/
+
+    scraper             Scraper utility
+    
+libscraper/
+
+    exceptions.py       Common exceptions raised by the library.
+
+    fixtures.py         Fixtures (contains list of known target sites patterns).
+
+    models/             The models module holds site-specific parser definitions.
+                        They are defined as plugins.
+
+    parser.py           URL Parsing library.
+
+    scraper.py          Deal Scraper. Provides the main plugin interface to find 
+                        and extract data from URLs.
+
+    utils.py            Common utility functions.
+
+
+Class Diagram:
+-------------
+                                   _________
+                                  |         |
+                              --<>| Groupon |
+                             |    |_________|
+   _________      ________   |     _________
+  |         |    |        |  |    |         |
+  | Scraper |--->| Parser |-----<>| ZXY     |
+  |_________|    |________|       |_________|
