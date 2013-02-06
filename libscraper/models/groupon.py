@@ -15,7 +15,7 @@ class Parser(BaseParser):
 
     def get_deals(self, url):
         """
-        The Groupon Europe RSS feed lists every single deal on all channels.
+        The Groupon Europe RSS feed lists all deals.
         Some RSS items include more than one offering, which are represented as multiple deals.
 
         """
@@ -23,8 +23,10 @@ class Parser(BaseParser):
         tree = self.parse(url=url)
         if tree._root is None:
             return [] # The parsing failed (usually caused by connection/network issues)
+
         if tree._ptype != 'XML':
             return [] # The Groupon parser requires an XML-formatted URL
+
         if tree._code == 200:
             for item in tree._root.xpath('/rss/channel/item'):
                 title = utils.get_text(item.xpath('title')[0])
@@ -45,7 +47,7 @@ class Parser(BaseParser):
                         deal['site'] = info['site']
                         deal['locale'] = info['locale']
                         deal['location'] = info['location']
-                        deal['channel'] = info['channel']
+                        deal['category'] = info['category']
                         deals.append(deal)
                 else:
                     deal = {}
@@ -59,7 +61,7 @@ class Parser(BaseParser):
                     deal['site'] = info['site']
                     deal['locale'] = info['locale']
                     deal['location'] = info['location']
-                    deal['channel'] = info['channel']
+                    deal['category'] = info['category']
                     deals.append(deal)
         return deals
 
@@ -82,12 +84,12 @@ class Parser(BaseParser):
                 try:
                     tag = tree._root.xpath('//div[@class="merchantContact"]').pop()
                 except IndexError:
-                    raise ElementMissing('://div[@class="merchantContact"]')
+                    raise ElementMissing('{:s}:://div[@class="merchantContact"]'.format(url))
                 else:
                     try:
                         deal['merchant'] = utils.get_text(tag.xpath('//h2[@class="subHeadline"]')[0])
                     except IndexError:
-                        raise ElementMissing('merchant://h2[@class="subHeadline"]')
+                        raise ElementMissing('{:s}:merchant://h2[@class="subHeadline"]'.format(url))
                     else:
                         try:
                             deal['merchant_url'] = tag.xpath('a').pop().get('href')
@@ -99,7 +101,7 @@ class Parser(BaseParser):
                 try:
                     tag = tree._root.xpath('//div[@id="contentDealBuyBox"]/span[@class="price"]/span[@class="noWrap"]').pop()
                 except IndexError:
-                    raise ElementMissing('price://div[@id="contentDealBuyBox"]/span[@class="price"]/span[@class="noWrap"]')
+                    raise ElementMissing('{:s}:price://div[@id="contentDealBuyBox"]/span[@class="price"]/span[@class="noWrap"]'.format(url))
                 else:
                     price = utils.extract_float_from_tag(tag)
                     deal['price'] = price
@@ -112,7 +114,7 @@ class Parser(BaseParser):
                     try:
                         tag = tree._root.xpath('//span[@id="jDealSoldAmount"]').pop()
                     except IndexError:
-                        raise ElementMissing('sales://span[@id="jDealSoldAmount"]')
+                        raise ElementMissing('{:s}:sales://span[@id="jDealSoldAmount"]'.format(url))
                     else:
                         deal['volume'] = int(utils.extract_float_from_tag(tag))
         return deal
@@ -121,7 +123,7 @@ class Parser(BaseParser):
     def __info_from_url(self, url):
         __site = ''
         __locale = ''
-        __channel = ''
+        __category = ''
         __location = ''
         __rel = ''
         info = self.urlinfo(url)
@@ -129,27 +131,27 @@ class Parser(BaseParser):
             __site = info['site']
         if info.has_key('locale'):
             __locale = info['locale']
-        if info.has_key('channels'):
-            __channel = info['channels']
+        if info.has_key('category'):
+            __category = info['category']
         if info.has_key('info'):
-            if not __channel:
+            if not __category:
                 __location = info['info'][0]
             else:
                 __location = 'National'
         if info.has_key('info'):
-            if not __channel:
+            if not __category:
                 __rel = info['info'][1]
             else:
                 __rel = info['info'][0]
         if info.has_key('locmap') and info['locmap'].has_key(__location):
-            __channel = info['locmap'][__location].get('channel', __channel)
+            __category = info['locmap'][__location].get('category', __category)
             __location = info['locmap'][__location].get('location')
         if __location:
             __location = utils.capitalize(re.sub(r'[-_]', ' ', __location))
         return {
             'site': __site,
             'locale': __locale,
-            'channel': __channel,
+            'category': __category,
             'location': __location,
             'rel': __rel
         }

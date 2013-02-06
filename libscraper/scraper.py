@@ -1,6 +1,8 @@
+from exceptions import TargetPatternNotFound, ElementMissing
 from fixtures import targets
 from parser import BaseParser
 from utils import Logger
+
 
 class Scraper(object):
 
@@ -17,11 +19,16 @@ class Scraper(object):
         """
         if not self._parser:
             self._parser = BaseParser(self)
-        info = self._parser.urlinfo(url, init=True)
-        if info.has_key('module'):
-            self._parser = info['module'].Parser(self)
-            self.logger.debug('Using model "%s"' % self._parser.name)
-        return info
+        try:
+            info = self._parser.urlinfo(url, init=True)
+        except TargetPatternNotFound:
+            self.logger.debug(' >> Target Pattern Not Found')
+            return {}
+        else:
+            if info.has_key('module'):
+                self._parser = info['module'].Parser(self)
+                self.logger.debug('Using model "%s"' % self._parser.name)
+            return info
 
     def parse(self, url, headers=None, proxy=None):
         """ Returns Tree object """
@@ -38,5 +45,14 @@ class Scraper(object):
     def get_deal(self, url=''):
         if not url:
             return {}
-        self.urlinfo(url) # initialize parser model
-        return self._parser.get_deal(url)
+        try:
+            self.urlinfo(url) # initialize parser model
+        except TargetPatternNotFound:
+            self.logger.debug(' >> Target Pattern Not Found')
+            return {}
+        else:
+            try:
+                return self._parser.get_deal(url)
+            except ElementMissing as e:
+                self.logger.debug(' >> Element Missing - {:s}'.format(e))
+                return {}

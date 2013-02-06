@@ -9,6 +9,7 @@ import random
 import sys
 import urllib2
 from lxml import etree
+from libscraper.exceptions import TargetPatternNotFound
 
 
 class Tree(object):
@@ -56,8 +57,7 @@ class BaseParser(object):
                     match['module'] = module
                 break
         if not match:
-            # TODO raise TargetPatternNotFound Exception
-            self.scraper.logger.debug('TargetPatternNotFound')
+            raise TargetPatternNotFound()
             return {}
         return match
 
@@ -127,7 +127,6 @@ class BaseParser(object):
     def get_deals(self, url):
         """
         The method should gather the following information:
-            - parser        Parser model name (parser used to find the deal)
             - title         Main headline
             - headline      Sub-headline
             - link          Full URI
@@ -136,9 +135,8 @@ class BaseParser(object):
             - description   Additional description
             - site          Site name
             - locale        Locale code
-            - location      Location name
-            - channel       Channel name
-            - category      Local category (as defined on target site)
+            - location      Location
+            - category      Category
 
         """
         return []

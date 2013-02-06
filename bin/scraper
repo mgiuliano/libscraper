@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Scraper CLI.')
     parser.add_argument('action', metavar='action', type=str,
                         choices=['show-targets', 'get-urlinfo', 'parse-url', 'get-deals', 'get-deal'],
-                        help='Parser actions: show-targets, parseurl, urlinfo, get-deals, get-deal')
+                        help='Parser actions: show-targets, parse-url, urlinfo, get-deals, get-deal')
     parser.add_argument('--url', type=str, help='target URL')
     args = parser.parse_args()
     if args.action in ('get-urlinfo', 'parse-url', 'get-deals', 'get-deal') and args.url is None:
@@ -22,7 +22,7 @@ def parse_args():
 
 def main():
 
-    from libscraper import scraper, exceptions
+    from libscraper import scraper
     
     scrpr = scraper.Scraper(verbose=True)
     action, url = parse_args()
@@ -50,11 +50,8 @@ def main():
                 scrpr.logger.debug('--')
 
     elif action == 'get-deal':
-        try:
-            deal = scrpr.get_deal(url)
-        except exceptions.ElementMissing as e:
-            scrpr.logger.debug(" >>> Element Missing -- {!s}".format(e))
-        else:
+        deal = scrpr.get_deal(url)
+        if deal:
             for k, v in deal.items():
                 scrpr.logger.debug(' >> ' + str(k) + ": " + str(v))
 

@@ -3,19 +3,24 @@ Target Patterns.
 Patterns within a target need to be ordered using the most specific first.
 
 Optional location mapping allows specific assignment of known location strings
-to actual location name and/or channel, using the follwing format:
-    {
-        'loc-code': ('Location', 'Channel')
+to actual location name and/or category, using the following format:
+    locmap = {
+        'loc-code': {
+            'location': <Location>,
+            'category': <Category>
+        },
+        ...
     }
+
 """
 import re
 
 class Target(object):
 
-    def __init__(self, site='', locale='', channels='', parser='', patterns=[], locmap={}):
+    def __init__(self, site='', locale='', category='', parser='', patterns=[], locmap={}):
         self._site_name = site
         self._locale = locale
-        self._channels = channels
+        self._category = category
         self._parser = parser
         self._patterns = []
         for pattern in patterns:
@@ -26,14 +31,14 @@ class Target(object):
         return {
             'site': self._site_name,
             'locale': self._locale,
-            'channels': self._channels,
+            'category': self._category,
             'parser': self._parser,
             'locmap': self._locmap,
             'unicode': self.tostring(),
         }
 
     def tostring(self):
-        return "{:s} [{:s}] {:s}".format(self._site_name, self._locale, self._channels)
+        return "{:s} [{:s}] {:s}".format(self._site_name, self._locale, self._category)
 
 targets = [
 
@@ -41,7 +46,7 @@ targets = [
     Target(
         site='Groupon', # Groupon UK (Getaways)
         locale='en_GB', 
-        channels='Getaways', 
+        category='Getaways', 
         parser='groupon',
         patterns=[
             'http://www.groupon.co.uk/deals/groupon-getaways/[\w-]+/(\d+)'
@@ -56,7 +61,7 @@ targets = [
             'http://www.groupon.co.uk/deals/([\w-]+)/[\w-]+/(\d+)'
         ],
         locmap={
-            'national-deal': {'location': 'National', 'channel': 'Goods'},
+            'national-deal': {'location': 'National', 'category': 'Goods'},
         }
     ),
 
@@ -74,7 +79,7 @@ targets = [
     #        'marseille-extra': {'location': 'Marseille Region'},
     #        'nantes-extra': {'location': 'Nantes Metropole'},
     #        'nice-extra': {'location': 'Nice Riviera'},
-    #        'voyages': {'location': 'National', 'channel': 'Getaways'},
+    #        'voyages': {'location': 'National', 'category': 'Getaways'},
     #    }
     #),
 
