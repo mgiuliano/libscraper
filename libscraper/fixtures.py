@@ -57,11 +57,17 @@ targets = [
         locale='en_GB',
         parser='groupon',
         patterns=[
-            'http://api.groupon.de/feed/api/v1/deals/oftheday/UK', # FEED
+            'http://10.1.29.10/~michael/dealstracker/GrouponUK.xml',    # FEED [DEV]
+            'http://api.groupon.de/feed/api/v1/deals/oftheday/UK',      # FEED
             'http://www.groupon.co.uk/deals/([\w-]+)/[\w-]+/(\d+)'
         ],
         locmap={
             'national-deal': {'location': 'National', 'category': 'Goods'},
+            'birmingham-special': {'location': 'Birmingham', 'category': 'Special'},
+            'london-special': {'location': 'London', 'category': 'Special'},
+            'manchester-special': {'location': 'Manchester', 'category': 'Special'},
+            'events': {'location': 'National', 'category': 'Events'},
+            'groupon-getaways': {'location': 'National', 'category': 'Getaways'},
         }
     ),
 

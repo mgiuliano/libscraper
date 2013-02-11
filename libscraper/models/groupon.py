@@ -2,6 +2,7 @@
 Groupon (EU) Model.
 
 """
+import datetime
 import re
 from lxml import etree
 from libscraper import utils
@@ -11,6 +12,24 @@ from libscraper.exceptions import ElementMissing
 class Parser(BaseParser):
 
     name = 'Groupon (EU)'
+
+
+    def get_urlinfo(self, info):
+        """ Map data from fixtures """
+        data = {}
+        if info.has_key('info') and info['info']:
+            # Location
+            location = info['info'][0]
+            if location:
+                data['location'] = utils.capitalize(re.sub(r'[-_]', ' ', location))
+            else:
+                data['location'] = 'National'
+            if info['locmap'].has_key(location):
+                data['location'] = info['locmap'][location]['location']
+                data['category'] = info['locmap'][location]['category']
+            # Rel ID
+            data['rel_id'] = info['info'][1]
+        return data
 
 
     def get_deals(self, url):
@@ -28,40 +47,62 @@ class Parser(BaseParser):
             return [] # The Groupon parser requires an XML-formatted URL
 
         if tree._code == 200:
+            info = self.urlinfo(url)
             for item in tree._root.xpath('/rss/channel/item'):
                 title = utils.get_text(item.xpath('title')[0])
-                pubDate = utils.get_text(item.xpath('pubDate')[0])
+                pubDate = utils.get_text(item.xpath('pubDate')[0])[:-4] # Remove ' GMT'
+                pubDate = datetime.datetime.strptime(pubDate, '%a, %d %b %Y %X')
                 link = utils.strip_qs(utils.get_text(item.xpath('link')[0]))
                 link_base = "/".join(link.split('/')[:-1])
                 description = etree.HTML(item.xpath('description')[0].text)
                 if len(description.xpath('//ul/a')) > 1:
                     for itm in description.xpath('//ul'):
                         deal = {}
-                        deal['parser'] = self.name
                         deal['title'] = utils.get_text(itm.xpath('a')[0])
                         deal['headline'] = utils.get_text(itm.xpath('br')[0], with_tail=True)
                         deal['link'] = utils.strip_qs(itm.xpath('a')[0].get('href'))
-                        info = self.__info_from_url(deal['link'])
-                        deal['rel'] = info['rel']
+                        info = self.urlinfo(deal['link'])
+                        deal['rel_id'] = info['rel_id']
                         deal['pubDate'] = pubDate
                         deal['site'] = info['site']
                         deal['locale'] = info['locale']
                         deal['location'] = info['location']
                         deal['category'] = info['category']
+                        hashbag = [
+                            deal['title'],
+                            deal['headline'],
+                            deal['pubDate'],
+                            deal['rel_id'],
+                            deal['site'],
+                            deal['locale'],
+                            deal['location'],
+                            deal['category']
+                        ]
+                        deal['hashid'] = self.get_hash(hashbag)
                         deals.append(deal)
                 else:
                     deal = {}
-                    deal['parser'] = self.name
                     deal['title'] = title
                     deal['headline'] = utils.get_text(description)
                     deal['link'] = link
-                    info = self.__info_from_url(link)
-                    deal['rel'] = info['rel']
+                    info = self.urlinfo(link)
+                    deal['rel_id'] = info['rel_id']
                     deal['pubDate'] = pubDate
                     deal['site'] = info['site']
                     deal['locale'] = info['locale']
                     deal['location'] = info['location']
                     deal['category'] = info['category']
+                    hashbag = [
+                        deal['title'],
+                        deal['headline'],
+                        deal['pubDate'],
+                        deal['rel_id'],
+                        deal['site'],
+                        deal['locale'],
+                        deal['location'],
+                        deal['category']
+                    ]
+                    deal['hashid'] = self.get_hash(hashbag)
                     deals.append(deal)
         return deals
 
@@ -118,43 +159,6 @@ class Parser(BaseParser):
                     else:
                         deal['volume'] = int(utils.extract_float_from_tag(tag))
         return deal
-
-
-    def __info_from_url(self, url):
-        __site = ''
-        __locale = ''
-        __category = ''
-        __location = ''
-        __rel = ''
-        info = self.urlinfo(url)
-        if info.has_key('site'):
-            __site = info['site']
-        if info.has_key('locale'):
-            __locale = info['locale']
-        if info.has_key('category'):
-            __category = info['category']
-        if info.has_key('info'):
-            if not __category:
-                __location = info['info'][0]
-            else:
-                __location = 'National'
-        if info.has_key('info'):
-            if not __category:
-                __rel = info['info'][1]
-            else:
-                __rel = info['info'][0]
-        if info.has_key('locmap') and info['locmap'].has_key(__location):
-            __category = info['locmap'][__location].get('category', __category)
-            __location = info['locmap'][__location].get('location')
-        if __location:
-            __location = utils.capitalize(re.sub(r'[-_]', ' ', __location))
-        return {
-            'site': __site,
-            'locale': __locale,
-            'category': __category,
-            'location': __location,
-            'rel': __rel
-        }
 
 
     def __extract_address_lines(self, tag):

@@ -25,8 +25,8 @@ class Scraper(object):
             self.logger.debug(' >> Target Pattern Not Found')
             return {}
         else:
-            if info.has_key('module'):
-                self._parser = info['module'].Parser(self)
+            if info.has_key('parser'):
+                self._parser = info['parser']
                 self.logger.debug('Using model "%s"' % self._parser.name)
             return info
 

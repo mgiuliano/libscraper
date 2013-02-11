@@ -4,15 +4,17 @@ import sys
 import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LIB_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../libscraper'))
+ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../libscraper'))
+LIB_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 sys.path.append(SCRIPT_DIR)
+sys.path.append(ROOT_DIR)
 sys.path.append(LIB_DIR)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Scraper CLI.')
     parser.add_argument('action', metavar='action', type=str,
                         choices=['show-targets', 'get-urlinfo', 'parse-url', 'get-deals', 'get-deal'],
-                        help='Parser actions: show-targets, parse-url, urlinfo, get-deals, get-deal')
+                        help='Parser actions: show-targets, parse-url, get-urlinfo, get-deals, get-deal')
     parser.add_argument('--url', type=str, help='target URL')
     args = parser.parse_args()
     if args.action in ('get-urlinfo', 'parse-url', 'get-deals', 'get-deal') and args.url is None:

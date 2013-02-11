@@ -3,6 +3,7 @@ The Parser module provides the tools required to parse URLs.
 
 """
 import importlib
+import hashlib
 import pkg_resources
 import re
 import random
@@ -53,12 +54,19 @@ class BaseParser(object):
                 parser_model = match['parser'] + '.py'
                 models = pkg_resources.resource_listdir('models', '')
                 if parser_model in models:
+                    # Load module
                     module = importlib.import_module('.'+parser_model[:-3], 'models')
-                    match['module'] = module
+                    # Replace parser with Parser instance
+                    parser = module.Parser(self.scraper)                    
+                    match['parser'] = parser
+                    # Load info from fixtures
+                    match.update(parser.get_urlinfo(match))
                 break
         if not match:
             raise TargetPatternNotFound()
             return {}
+        if not init:
+            match.update(self.get_urlinfo(match))
         return match
 
     def __connect(self, url, headers=None, proxy=None):
@@ -81,6 +89,11 @@ class BaseParser(object):
             opener = urllib2.build_opener()
         r = opener.open(request, timeout=timeout)
         return r
+
+    def get_hash(self, hashbag=[]):
+        if not hashbag:
+            return None
+        return hashlib.sha256(','.join([str(i) for i in hashbag])).hexdigest()
 
     def parse(self, url, headers=None, proxy=None):
         """
@@ -130,13 +143,14 @@ class BaseParser(object):
             - title         Main headline
             - headline      Sub-headline
             - link          Full URI
-            - rel           Local ID (as listed on target site)
-            - pubDate       Publication date
+            - rel_id        Local ID (integer)
+            - pubDate       Publication date (datetime.datetime)
             - description   Additional description
             - site          Site name
             - locale        Locale code
             - location      Location
             - category      Category
+            - hashid        SHA256 hash (used to uniquely identify a deal)
 
         """
         return []
