@@ -122,6 +122,7 @@ class Parser(BaseParser):
             except IndexError: # Expired / Sold Out
                 deal['status'] = 0
             else:
+                info = self.urlinfo(url)
                 try:
                     tag = tree._root.xpath('//div[@class="merchantContact"]').pop()
                 except IndexError:
@@ -136,7 +137,7 @@ class Parser(BaseParser):
                             deal['merchant_url'] = tag.xpath('a').pop().get('href')
                         except IndexError:
                             pass
-                        address = self.__extract_address_lines(tag)
+                        address = self.__extract_address_lines(tag, deal, info)
                         if address:
                             deal['addresses'] = [address]
                 try:
@@ -147,7 +148,7 @@ class Parser(BaseParser):
                     price = utils.extract_float_from_tag(tag)
                     deal['price'] = price
                     try:
-                        tag = tree._root.xpath('//div[@id="contentDealBuyBox"]/table[@class="savings"]//tr[@class="row2"]/td')[1]
+                        tag = tree._root.xpath('//div[@id="contentDealBuyBox"]/div[contains(@class, "savings")]/*[contains(@class, "_saving")]')[0]
                         _savings = utils.extract_float_from_tag(tag)
                     except IndexError:
                         _savings = 0.0
@@ -161,8 +162,10 @@ class Parser(BaseParser):
         return deal
 
 
-    def __extract_address_lines(self, tag):
+    def __extract_address_lines(self, tag, deal, info):
         raw_address = []
         for a in utils.extract_lines_from_tag(tag):
             raw_address.extend([utils.strip_white_spaces(s) for s in a.split(',')])
-        return raw_address
+        raw_address = [l for l in raw_address if l != deal['merchant']]
+        clean_addr = utils.clean_address_lines(raw_address, info['locale'])
+        return clean_addr

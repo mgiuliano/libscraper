@@ -44,16 +44,7 @@ targets = [
 
     ### Groupon UK ###
     Target(
-        site='Groupon', # Groupon UK (Getaways)
-        locale='en_GB', 
-        category='Getaways', 
-        parser='groupon',
-        patterns=[
-            'http://www.groupon.co.uk/deals/groupon-getaways/[\w-]+/(\d+)'
-        ]
-    ),
-    Target(
-        site='Groupon', # Groupon UK (All other Channels)
+        site='Groupon',
         locale='en_GB',
         parser='groupon',
         patterns=[

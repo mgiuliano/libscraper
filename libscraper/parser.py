@@ -145,7 +145,6 @@ class BaseParser(object):
             - link          Full URI
             - rel_id        Local ID (integer)
             - pubDate       Publication date (datetime.datetime)
-            - description   Additional description
             - site          Site name
             - locale        Locale code
             - location      Location

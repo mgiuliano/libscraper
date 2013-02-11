@@ -2,6 +2,7 @@
 Common tools and helpers.
 
 """
+import inspect
 import re
 from lxml import etree
 
@@ -104,6 +105,86 @@ def extract_lines_from_tag(tag, exclude_tags=('a','iframe'), include_tags=None):
                 if line not in lines:
                     lines.append(line)
     return lines
+
+def clean_address_lines(address_lines, locale):
+    """
+    Converts a list of address fields to a dictionary.
+    The dictionary will contained the cleaned Postcode and Phone number if found.
+    The method first detects which locale to use to extract formatted addresses.
+
+    Clean addresses MUST have a valid postcode.
+
+    """
+    code = locale[3:].lower()
+    method = "clean_{:s}_address_lines".format(code)
+    module = inspect.getmodule(inspect.stack()[0][0])
+    if not hasattr(module, method):
+        return {}
+    else:
+        address = getattr(module, method)(address_lines)
+        if not address.has_key('postcode'):
+            return {} # No postcode
+        else:
+            lines = []
+            for line in address['address']:
+                addr = re.sub(address['postcode'], '', line).strip()
+                if addr:
+                    lines.append(addr)
+            address['address'] = lines
+            address['locale'] = locale
+            return address
+
+def clean_gb_address_lines(address_lines):
+    outcode_pattern = '[A-PR-UWYZ]([0-9]{1,2}|([A-HIK-Y][0-9](|[0-9]|[ABEHMNPRVWXY]))|[0-9][A-HJKSTUW])'
+    incode_pattern = '[0-9][ABD-HJLNP-UW-Z]{2}'
+    postcode_re = re.compile(r'(GIR 0AA|%s %s)' % (outcode_pattern, incode_pattern))
+    space_re = re.compile(r' *(%s)$' % incode_pattern)
+    phone_digits_re = re.compile(r'([0-9]{11})')
+    invalid_values_re = re.compile("|".join(["None",]))
+    excluded_values_re = re.compile(r'[\|\.]|{:s}'.format("|".join(["Returns:"])))
+    clean_address = {'address': []}
+    for line in address_lines:
+        m = phone_digits_re.search(re.sub(r'\s\s*', '', line))
+        if m:
+            clean_address.update({'phone': u'{!s}'.format(m.group(1))})
+            continue
+        postcode = space_re.sub(r' \1', line.upper().strip())
+        m = postcode_re.search(postcode)
+        if m:
+            clean_address.update({'postcode': u'{!s}'.format(m.group(1))})
+        value = excluded_values_re.sub('', line).lstrip().rstrip()
+        if not invalid_values_re.search(value):
+            clean_address['address'].append(u'{!s}'.format(value.decode('utf-8')))
+    return clean_address
+
+#def clean_fr_address_lines(address_lines):
+#    phone_digits_re = re.compile(r'^0\d(\s|\.)?(\d{2}(\s|\.)?){3}\d{2}$')
+#    postal_code_re = re.compile(r'(\d{5})')
+#    excluded_values_re = re.compile(r'[\|\.]|{:s}'.format("|".join([])))
+#    invalid_values_re = re.compile("|".join(["None",]))
+#    clean_address = {'address': []}
+#    for line in address_lines:
+#        value = smart_unicode(line)
+#        phone_value = re.sub('(\.|\s)', '', value)
+#        m = phone_digits_re.search(phone_value)
+#        if m:
+#            clean_address.update({
+#                'phone': u'{:s} {:s} {:s} {:s} {:s}'.format(
+#                                                            phone_value[0:2],
+#                                                            phone_value[2:4],
+#                                                            phone_value[4:6],
+#                                                            phone_value[6:8],
+#                                                            phone_value[8:10]
+#                                                           )
+#            })
+#            continue
+#        m = postal_code_re.search(value)
+#        if m:
+#            clean_address.update({'postcode': m.group(1)})
+#        value = excluded_values_re.sub('', value).lstrip().rstrip()
+#        if not invalid_values_re.search(value):
+#            clean_address['address'].append(value)
+#    return clean_address
 
 def extract_float_from_tag(tag):
     """
